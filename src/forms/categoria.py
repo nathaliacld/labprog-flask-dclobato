@@ -4,7 +4,15 @@ from wtforms.validators import InputRequired
 
 
 class NovoCategoriaForm(FlaskForm):
-    nome = StringField('Nome da categoria', validators=[
+    nome = StringField('Nome da categoria',
+                       validators=[
                                                     InputRequired(message="É obrigatório informar um nome para categoria")
                                  ])
     submit = SubmitField("Adicionar")
+
+class EditCategoriaForm(FlaskForm):
+    nome = StringField('Nome da categoria',
+                       validators=[
+                            InputRequired(message="É obrigatório informar um nome para categoria")
+    ])
+    submit = SubmitField("Alterar")
