@@ -42,6 +42,7 @@ def add():
             flash("Categoria inexistente!",
                   category='danger')
             return redirect(url_for('produto.add'))
+        produto.categoria = categoria
         db.session.add(produto)
         db.session.commit()
         flash("Produto adicionado com sucesso!")
@@ -51,7 +52,19 @@ def add():
                            form=form,
                            tittle="Adicionar novo produto")
 
-@bp.route('</imagem/<uuid:id_produto>', methods=['GET'])
+
+@bp.route('/Lista', methods=['GET', 'POST'])
+@bp.route('/', methods=['GET', 'POST'])
+def lista():
+    sentenca = db.select(Produto).order_by(Produto.nome)
+    rset = db.session.execute(sentenca).scalars()
+
+    return render_template('produto/lista.jinja2',
+                           tittle="Lista de produtos",
+                           rset=rset)
+
+
+@bp.route('/imagem/<uuid:id_produto>', methods=['GET'])
 def imagem(id_produto):
     produto = Produto.get_by_id(id_produto)
     if produto is None:
@@ -59,8 +72,8 @@ def imagem(id_produto):
     conteudo, tipo = produto.imagem
     return Response(conteudo, tipo)
 
-@bp.route('</thumnbail/<uuid:id_produto>/<int:size>', methods=['GET'])
-@bp.route('</thumbnail/<uuid:id_produto>', methods=['GET'])
+@bp.route('/thumnbail/<uuid:id_produto>/<int:size>', methods=['GET'])
+@bp.route('/thumbnail/<uuid:id_produto>', methods=['GET'])
 def thumbnail(id_produto, size=128):
     produto = Produto.get_by_id(id_produto)
     if produto is None:

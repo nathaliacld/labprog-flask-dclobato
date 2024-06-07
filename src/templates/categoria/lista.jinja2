@@ -10,7 +10,7 @@
         </tr></thead>
 <tbody>
 {% for categoria in rset %}
-<tr><td>{{  categoria .nome }}</td>
+<tr><td>{{  categoria.nome }}</td>
     <td> <a href="{{ url_for('categoria.remove', id_categoria=categoria.id) }}"
     onclick="return confirm('Confirma a remoção da categoria?')">
         {{render_icon( 'trash3-fill', color='danger', size=20) }} </a>
