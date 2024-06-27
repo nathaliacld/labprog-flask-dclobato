@@ -46,7 +46,7 @@ def add():
         flash("Produto adicionado com sucesso!")
         return redirect(url_for('index'))
 
-    return render_template('produto/add.jinja2', form=form,
+    return render_template('produto/add_edit.jinja2', form=form,
                            title="Adicionar novo produto")
 
 
@@ -109,11 +109,24 @@ def lista():
     page = request.args.get('page', type=int, default=1)
     pp = request.args.get('pp', type=int, default=25)
     q = request.args.get('q', type=str, default="")
+    sort_by = request.args.get('sort_by', type=str, default="nome")
+    order = request.args.get('order', type=str, default="asc")
 
-    sentenca = db.select(Produto).order_by(Produto.nome)
+    sentenca = db.select(Produto)
 
-    if q != "":
-        sentenca = sentenca.filter(Produto.nome.ilike(f"%{q}%"))
+    from sqlalchemy import asc, func
+
+    if q:
+        sentenca = sentenca.filter(Produto.nome.ilike(f"%{q}%")).order_by(asc(func.lower(Produto.nome)))
+    else:
+        if sort_by == "preco":
+            sentenca = sentenca.order_by(asc(Produto.preco))
+        elif sort_by == "estoque":
+            sentenca = sentenca.order_by(asc(Produto.estoque))
+        elif sort_by == "categoria":
+            sentenca = sentenca.join(Categoria).order_by(asc(func.lower(Categoria.nome)))
+        else:
+            sentenca = sentenca.order_by(asc(func.lower(Produto.nome)))
 
     try:
         rset = db.paginate(sentenca, page=page, per_page=pp)
@@ -122,14 +135,14 @@ def lista():
         page = 1
         rset = db.paginate(sentenca, page=page, per_page=pp, error_out=False)
 
-
-
     return render_template('produto/lista.jinja2',
                            title="Lista de produtos",
                            rset=rset,
                            page=page,
                            pp=pp,
-                           q=q)
+                           q=q,
+                           sort_by=sort_by,
+                           order=order)
 
 
 
@@ -149,3 +162,25 @@ def thumbnail(id_produto, size=128):
         return abort(404)
     conteudo, tipo = produto.thumbnail(size)
     return Response(conteudo, mimetype=tipo)
+
+
+# Função genérica para listar produtos com ordenação
+def listar_produtos(ordenacao):
+    produtos = Produto.get_by_id(ordenacao).all()
+    return produtos
+
+@bp.route('/produtos/por_categoria', methods=['GET'])
+def lista_produtos_por_categoria():
+    produtos = listar_produtos(Produto.categoria_id.asc())
+    return render_template('produto/produto_lista_por_categoria.jinja2', rset=produtos)
+
+@bp.route('/produtos/por_estoque', methods=['GET'])
+def lista_produtos_por_estoque():
+    produtos = listar_produtos(Produto.estoque.asc())
+    return render_template('produto/produto_lista_por_estoque.jinja2', rset=produtos)
+
+@bp.route('/produtos/por_preco', methods=['GET'])
+def lista_produtos_por_preco():
+    produtos = listar_produtos(Produto.preco.asc())
+    return render_template('produto/produto_lista_por_preco.jinja2', rset=produtos)
+
